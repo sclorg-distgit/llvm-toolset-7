@@ -7,12 +7,16 @@
 
 Summary: Package that installs %scl
 Name: %scl_name
-Version: 4.0.0
-Release: 5%{?dist}
+Version: 4.0.1
+Release: 1%{?dist}
 License: NCSA
-Requires: %{scl_prefix}clang
-Requires: %{scl_prefix}lldb
-Requires: %{scl_prefix}llvm
+Requires: %{scl_prefix}clang = %{version}
+
+%ifarch %{arm} aarch64 %{ix86} x86_64
+Requires: %{scl_prefix}lldb = %{version}
+%endif
+
+Requires: %{scl_prefix}llvm = %{version}
 Requires: %{scl_prefix}python-lit
 BuildRequires: scl-utils-build
 BuildRequires: python2-devel
@@ -57,6 +61,12 @@ EOF
 %{_root_sysconfdir}/rpm/macros.%{scl}-config
 
 %changelog
+* Wed Jun 21 2017 Tom Stellard <tstellar@redhat.com> - 4.0.1-1
+- 4.0.1 Release.
+
+* Wed Jun 21 2017 Tom Stellard <tstellar@redhat.com> - 4.0.0-6
+- Fix Requires for lldb, this package is not built on all arches
+
 * Mon Jun 05 2017 Tom Stellard <tstellar@redhat.com> - 4.0.0-5
 - Remove scldevel package
 
