@@ -5,11 +5,20 @@
 
 %scl_package %scl
 
+%global dockerfiledir %{_datadir}/%{scl_prefix}dockerfiles
+
 Summary: Package that installs %scl
 Name: %scl_name
 Version: 4.0.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: NCSA
+
+# How to generate dockerfile tarbal:
+# rhpkg clone llvm-toolset-7-docker
+# cd llvm-toolset-7-docker
+# git archive --prefix=llvm-toolset-7-docker/ -o llvm-toolset-7-docker-`git rev-parse --short HEAD`.tar.gz HEAD
+Source0: llvm-toolset-7-docker-b49107f.tar.gz
+
 Requires: %{scl_prefix}clang = %{version}
 
 %ifarch %{arm} aarch64 %{ix86} x86_64
@@ -38,11 +47,23 @@ Requires: scl-utils-build
 %description build
 Package shipping essential configuration macros to build %scl Software Collection.
 
+%package dockerfiles
+Summary: Package shipping Dockerfiles for llvm-toolset
+
+%description dockerfiles
+This package provides a set of example Dockerfiles that can be used
+with llvm-toolset.
+
 %prep
-%setup -c -T
+%setup -c -T -a 0
 
 %install
 %scl_install
+
+install -d %{buildroot}%{dockerfiledir}
+install -d -p -m 755 %{buildroot}%{dockerfiledir}/rhel7
+install -d -p -m 755 %{buildroot}%{dockerfiledir}/rhel7/llvm-toolset-7-docker
+cp -a llvm-toolset-7-docker %{buildroot}%{dockerfiledir}/rhel7
 
 cat >> %{buildroot}%{_scl_scripts}/enable << EOF
 export PATH="%{_bindir}:%{_sbindir}\${PATH:+:\${PATH}}"
@@ -60,7 +81,13 @@ EOF
 %files build
 %{_root_sysconfdir}/rpm/macros.%{scl}-config
 
+%files dockerfiles
+%{dockerfiledir}
+
 %changelog
+* Wed Aug 09 2017 Tom Stellard <tstellar@redhat.com> - 4.0.1-2
+- Add docker file
+
 * Wed Jun 21 2017 Tom Stellard <tstellar@redhat.com> - 4.0.1-1
 - 4.0.1 Release.
 
