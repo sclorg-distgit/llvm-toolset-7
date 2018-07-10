@@ -5,19 +5,11 @@
 
 %scl_package %scl
 
-%global dockerfiledir %{_datadir}/%{scl_prefix}dockerfiles
-
 Summary: Package that installs %scl
 Name: %scl_name
-Version: 4.0.1
-Release: 2%{?dist}
+Version: 5.0.1
+Release: 4%{?dist}
 License: NCSA
-
-# How to generate dockerfile tarbal:
-# rhpkg clone llvm-toolset-7-docker
-# cd llvm-toolset-7-docker
-# git archive --prefix=llvm-toolset-7-docker/ -o llvm-toolset-7-docker-`git rev-parse --short HEAD`.tar.gz HEAD
-Source0: llvm-toolset-7-docker-b49107f.tar.gz
 
 Requires: %{scl_prefix}clang = %{version}
 
@@ -29,6 +21,8 @@ Requires: %{scl_prefix}llvm = %{version}
 Requires: %{scl_prefix}python-lit
 BuildRequires: scl-utils-build
 BuildRequires: python2-devel
+
+Obsoletes: %{scl_prefix}dockerfiles < 5.0.0
 
 %description
 This is the main package for %scl Software Collection.
@@ -47,23 +41,11 @@ Requires: scl-utils-build
 %description build
 Package shipping essential configuration macros to build %scl Software Collection.
 
-%package dockerfiles
-Summary: Package shipping Dockerfiles for llvm-toolset
-
-%description dockerfiles
-This package provides a set of example Dockerfiles that can be used
-with llvm-toolset.
-
 %prep
-%setup -c -T -a 0
+%setup -c -T
 
 %install
 %scl_install
-
-install -d %{buildroot}%{dockerfiledir}
-install -d -p -m 755 %{buildroot}%{dockerfiledir}/rhel7
-install -d -p -m 755 %{buildroot}%{dockerfiledir}/rhel7/llvm-toolset-7-docker
-cp -a llvm-toolset-7-docker %{buildroot}%{dockerfiledir}/rhel7
 
 cat >> %{buildroot}%{_scl_scripts}/enable << EOF
 export PATH="%{_bindir}:%{_sbindir}\${PATH:+:\${PATH}}"
@@ -73,18 +55,44 @@ export PKG_CONFIG_PATH="%{_libdir}/pkgconfig\${PKG_CONFIG_PATH:+:\${PKG_CONFIG_P
 export PYTHONPATH="%{?scl:%{_scl_root}}%{python2_sitelib}\${PYTHONPATH:+:\${PYTHONPATH}}"
 EOF
 
+# This allows users to build packages using LLVM Toolset.
+cat >> %{buildroot}%{_root_sysconfdir}/rpm/macros.%{scl} << EOF
+%%enable_llvmtoolset7 %%global ___build_pre %%{___build_pre}; source scl_source enable %{scl} || :
+EOF
+
 %files
 
 %files runtime -f filelist
 %scl_files
+%{_root_sysconfdir}/rpm/macros.%{scl}
 
 %files build
 %{_root_sysconfdir}/rpm/macros.%{scl}-config
 
-%files dockerfiles
-%{dockerfiledir}
-
 %changelog
+* Fri Feb 23 2018 Tom Stellard <tstellar@redhat.com> - 5.0.1-4
+- Obsolete llvm-toolset-7-dockerfiles
+
+* Fri Feb 16 2018 Tilmann Scheller <tschelle@redhat.com> - 5.0.1-3
+- Move %enable_llvmtoolset7 macro to the -build subpackage to avoid conflicts
+  between multiple definitions of %scl when using llvm-toolset-7 to build a SCL
+
+* Thu Feb 08 2018 Tilmann Scheller <tschelle@redhat.com> - 5.0.1-2
+- Add %enable_llvmtoolset7 macro to make it easier to activate llvm-toolset-7
+  during package builds.
+
+* Wed Jan 17 2018 Tom Stellard <tstellar@redhat.com> - 5.0.1-1
+- LLVM 5.0.1 release
+
+* Wed Jan 17 2018 Tom Stellard <tstellar@redhat.com> - 4.0.1-5
+- Drop dockerfiles package
+
+* Wed Oct 04 2017 Tom Stellard <tstellar@redhat.com> - 4.0.1-4
+- Update Dockerfile
+
+* Wed Sep 20 2017 Tom Stellard <tstellar@redhat.com> - 4.0.1-3
+- Update Dockerfile
+
 * Wed Aug 09 2017 Tom Stellard <tstellar@redhat.com> - 4.0.1-2
 - Add docker file
 
